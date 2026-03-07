@@ -41,6 +41,9 @@ const elBtnNext = $("btn-next");
 const elBtnLast = $("btn-last");
 const elPageInfo = $("page-info");
 const elToast = $("toast");
+const elStatMutuals = $("stat-mutuals");
+const elRelFilterWrap = $("rel-filter-wrap");
+const elFilterBtns = () => document.querySelectorAll(".rel-filter-btn");
 
 // ─── Debug panel DOM refs ─────────────────────────────────────────────────────
 const elDebugPanel = $("debug-panel");
@@ -62,6 +65,7 @@ let totalPages = 1;
 let isScanning = false;
 let onFollowPage = false;
 let toastTimer = null;
+let relationshipFilter = "all"; // 'all' | 'following' | 'followers' | 'both'
 let lastTelemetry = null;
 
 // ─── Initialization ───────────────────────────────────────────────────────────
@@ -125,19 +129,20 @@ async function refreshStatus() {
       }
 
       chrome.tabs.sendMessage(tab.id, { type: "GET_STATUS" }, (response) => {
+        const followPattern =
+          /\/[A-Za-z0-9_]{1,50}\/(following|followers)(\?.*)?$/;
         if (chrome.runtime.lastError) {
-          // Content script may not be ready yet; fall back to URL-based detection
-          onFollowPage = /\/[A-Za-z0-9_]{1,50}\/following(\?.*)?$/.test(url);
+          onFollowPage = followPattern.test(url);
           isScanning = false;
           resolve();
           return;
         }
 
         if (response) {
-          onFollowPage = !!response.onFollowingPage;
+          onFollowPage = !!response.onSupportedPage;
           isScanning = !!response.scanning;
         } else {
-          onFollowPage = /\/[A-Za-z0-9_]{1,50}\/following(\?.*)?$/.test(url);
+          onFollowPage = followPattern.test(url);
           isScanning = false;
         }
 
@@ -162,7 +167,7 @@ function renderStatusBar() {
     elPageLabel.textContent = "Scanning following list…";
   } else if (onFollowPage) {
     elPageDot.classList.add("dot--ready");
-    elPageLabel.textContent = "Ready to scan";
+    elPageLabel.textContent = "Ready — Following or Followers page";
   } else {
     elPageDot.classList.add("dot--off");
     elPageLabel.textContent = "Not on a Following page";
@@ -216,10 +221,18 @@ function setScanBtnIcon(type) {
 function applySearch(rawQuery, resetPage = true) {
   const q = rawQuery.trim().toLowerCase().replace(/^@/, "");
 
+  // Start from the relationship-filtered base
+  const base =
+    relationshipFilter === "all"
+      ? allUsers
+      : allUsers.filter(
+          (u) => (u.relationship || "following") === relationshipFilter,
+        );
+
   if (!q) {
-    filtered = allUsers.slice();
+    filtered = base.slice();
   } else {
-    filtered = allUsers.filter(
+    filtered = base.filter(
       (u) =>
         (u.handle || "").toLowerCase().includes(q) ||
         (u.name || "").toLowerCase().includes(q) ||
@@ -245,15 +258,21 @@ function renderStats(query) {
   if (hasData) {
     elStatsRow.hidden = false;
     elSearchWrap.hidden = false;
+    elRelFilterWrap.hidden = false;
   } else {
     elStatsRow.hidden = true;
     elSearchWrap.hidden = true;
+    elRelFilterWrap.hidden = true;
   }
 
+  const mutualCount = allUsers.filter((u) => u.relationship === "both").length;
+
   elStatTotal.textContent = allUsers.length.toLocaleString();
-  elStatFiltered.textContent = query
-    ? filtered.length.toLocaleString()
-    : allUsers.length.toLocaleString();
+  elStatMutuals.textContent = mutualCount.toLocaleString();
+  elStatFiltered.textContent =
+    query || relationshipFilter !== "all"
+      ? filtered.length.toLocaleString()
+      : allUsers.length.toLocaleString();
 }
 
 // ─── User list ────────────────────────────────────────────────────────────────
@@ -358,6 +377,14 @@ function buildUserCard(user, query, idx) {
     bioEl.innerHTML = highlight(escapeHtml(user.bio), query);
     info.appendChild(bioEl);
   }
+
+  // Relationship badge
+  const rel = user.relationship || "following";
+  const relBadge = document.createElement("span");
+  relBadge.className = `rel-badge rel-badge--${rel}`;
+  relBadge.textContent =
+    rel === "both" ? "Mutual" : rel === "followers" ? "Follower" : "Following";
+  info.appendChild(relBadge);
 
   // ── External link button ──────────────────────────────────────────
   const linkBtn = document.createElement("a");
@@ -489,7 +516,19 @@ function bindEvents() {
     elSearchInput.focus();
   });
 
-  // ── Pagination ────────────────────────────────────────────────────
+  // ── Relationship filter tabs ──────────────────────────────────
+  elFilterBtns().forEach((btn) => {
+    btn.addEventListener("click", () => {
+      relationshipFilter = btn.dataset.rel || "all";
+      elFilterBtns().forEach((b) =>
+        b.classList.remove("rel-filter-btn--active"),
+      );
+      btn.classList.add("rel-filter-btn--active");
+      applySearch(elSearchInput.value);
+    });
+  });
+
+  // ── Pagination ────────────────────────────────────────────────
   elBtnFirst.addEventListener("click", () => goToPage(1));
   elBtnLast.addEventListener("click", () => goToPage(totalPages));
   elBtnPrev.addEventListener("click", () => goToPage(currentPage - 1));
@@ -564,7 +603,7 @@ function listenForContentMessages() {
       case "SCAN_DONE": {
         isScanning = false;
         elProgressFill.style.width = "100%";
-        elProgressText.textContent = `Done! ${(message.count || 0).toLocaleString()} followings stored.`;
+        elProgressText.textContent = `Done! ${(message.count || 0).toLocaleString()} accounts stored.`;
         setTimeout(() => {
           elProgressWrap.hidden = true;
           elProgressFill.style.width = "0%";
@@ -574,8 +613,8 @@ function listenForContentMessages() {
         renderDebugPanel(); // final state snapshot stays visible
         const reason =
           message.reason === "complete"
-            ? `✓ Scan complete — ${(message.count || 0).toLocaleString()} followings stored.`
-            : `Scan stopped — ${(message.count || 0).toLocaleString()} followings stored so far.`;
+            ? `✓ Scan complete — ${(message.count || 0).toLocaleString()} accounts stored.`
+            : `Scan stopped — ${(message.count || 0).toLocaleString()} accounts stored so far.`;
         showToast(reason, message.reason === "complete" ? "success" : "warn");
         break;
       }
@@ -599,7 +638,7 @@ function listenForContentMessages() {
         break;
 
       case "PAGE_CHANGED":
-        onFollowPage = !!message.onFollowingPage;
+        onFollowPage = !!message.onSupportedPage;
         renderStatusBar();
         break;
 
@@ -614,6 +653,16 @@ function listenForContentMessages() {
 }
 
 // ─── Debug panel ──────────────────────────────────────────────────────────────
+
+// ─── Relationship filter sync (restore active state after re-render) ──────────
+function syncFilterButtons() {
+  elFilterBtns().forEach((btn) => {
+    btn.classList.toggle(
+      "rel-filter-btn--active",
+      btn.dataset.rel === relationshipFilter,
+    );
+  });
+}
 
 const ACTION_LABELS = {
   idle: "Idle",
@@ -673,6 +722,7 @@ function derivePanelState(action) {
 }
 
 function renderDebugPanel() {
+  syncFilterButtons();
   const show = isScanning || lastTelemetry !== null;
   elDebugPanel.hidden = !show;
   if (!show) return;

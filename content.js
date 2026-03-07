@@ -67,10 +67,15 @@
   };
 
   // ─── URL helpers ──────────────────────────────────────────────────────────
-  const isFollowingPage = () =>
-    /^https:\/\/(twitter|x)\.com\/[A-Za-z0-9_]{1,50}\/following(\?.*)?$/.test(
+  const isSupportedPage = () =>
+    /^https:\/\/(twitter|x)\.com\/[A-Za-z0-9_]{1,50}\/(following|followers)(\?.*)?$/.test(
       location.href,
     );
+
+  function getPageType() {
+    const m = location.href.match(/\/(following|followers)(\?.*)?$/);
+    return m ? m[1] : "following"; // 'following' | 'followers'
+  }
 
   // ─── Data-extraction helpers ───────────────────────────────────────────────
 
@@ -187,6 +192,7 @@
       bio: extractBio(cell),
       verified: extractVerified(cell),
       profileUrl: `https://x.com/${handle}`,
+      relationship: getPageType(), // 'following' | 'followers' — may be upgraded to 'both'
       scannedAt: Date.now(),
     };
   }
@@ -288,27 +294,37 @@
    * Returns the number of newly added users.
    */
   function scanVisible() {
+    const pageType = getPageType(); // 'following' | 'followers'
     const cells = document.querySelectorAll('[data-testid="UserCell"]');
     let added = 0;
+    let upgraded = 0; // existing entries whose relationship was upgraded to 'both'
+
     for (const cell of cells) {
       // Skip cells we have already successfully parsed in this session.
-      // This prevents the MutationObserver from re-processing the same node
-      // hundreds of times as Twitter re-renders its virtual list.
       if (seenCells.has(cell)) continue;
 
       const user = parseUserCell(cell);
       if (!user) continue;
 
-      // Mark cell as seen regardless of whether the handle is new,
-      // so we don't waste time parsing it again.
       seenCells.add(cell);
 
       if (!collectedMap[user.handle]) {
+        // Brand-new user — store with the current page's relationship type.
         collectedMap[user.handle] = user;
         added++;
+      } else {
+        // Already stored from a previous scan (possibly on the other page).
+        // Upgrade to 'both' if they appear on this page too.
+        const existing = collectedMap[user.handle];
+        const existingRel = existing.relationship || pageType;
+        if (existingRel !== "both" && existingRel !== pageType) {
+          existing.relationship = "both";
+          upgraded++;
+        }
       }
     }
-    if (added > 0) {
+
+    if (added > 0 || upgraded > 0) {
       persist();
       broadcast("SCAN_PROGRESS", { count: Object.keys(collectedMap).length });
     }
@@ -891,10 +907,10 @@
   async function startScan() {
     if (scanning) return;
 
-    if (!isFollowingPage()) {
+    if (!isSupportedPage()) {
       broadcast("SCAN_ERROR", {
         message:
-          'Navigate to a Twitter/X "Following" page first, then click Scan.',
+          'Navigate to a Twitter/X "Following" or "Followers" page first, then click Scan.',
       });
       return;
     }
@@ -960,7 +976,8 @@
       case "GET_STATUS":
         sendResponse({
           scanning,
-          onFollowingPage: isFollowingPage(),
+          onSupportedPage: isSupportedPage(),
+          pageType: getPageType(),
           count: Object.keys(collectedMap).length,
           url: location.href,
           telemetry: lastTelemetry,
@@ -991,13 +1008,14 @@
     if (location.href === _lastHref) return;
     _lastHref = location.href;
 
-    if (scanning && !isFollowingPage()) {
+    if (scanning && !isSupportedPage()) {
       stopScan("navigated_away");
     }
 
     broadcast("PAGE_CHANGED", {
       url: location.href,
-      onFollowingPage: isFollowingPage(),
+      onSupportedPage: isSupportedPage(),
+      pageType: getPageType(),
     });
   }, 800);
 

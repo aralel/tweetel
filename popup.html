@@ -105,6 +105,10 @@
                 <span class="stat-label">Shown</span>
             </div>
             <div class="stat-card">
+                <span class="stat-value" id="stat-mutuals">0</span>
+                <span class="stat-label">Mutuals</span>
+            </div>
+            <div class="stat-card">
                 <span class="stat-value" id="stat-last-scan">—</span>
                 <span class="stat-label">Last scan</span>
             </div>
@@ -161,6 +165,36 @@
                 </div>
             </div>
         </section>
+
+        <!-- ═══════════════════════════════════════════════
+       RELATIONSHIP FILTER
+  ═══════════════════════════════════════════════ -->
+        <div class="rel-filter-wrap" id="rel-filter-wrap" hidden>
+            <button
+                class="rel-filter-btn rel-filter-btn--active"
+                data-rel="all"
+                id="filter-all"
+            >
+                All
+            </button>
+            <button
+                class="rel-filter-btn"
+                data-rel="following"
+                id="filter-following"
+            >
+                Following
+            </button>
+            <button
+                class="rel-filter-btn"
+                data-rel="followers"
+                id="filter-followers"
+            >
+                Followers
+            </button>
+            <button class="rel-filter-btn" data-rel="both" id="filter-both">
+                Mutuals
+            </button>
+        </div>
 
         <!-- ═══════════════════════════════════════════════
        SEARCH BAR
@@ -258,10 +292,14 @@
                         stroke-linecap="round"
                     />
                 </svg>
-                <p class="empty-title">No followings scanned yet</p>
+                <p class="empty-title">No accounts scanned yet</p>
                 <p class="empty-body">
-                    Open your Twitter&nbsp;/ X&nbsp;<strong>Following</strong>
-                    page (<code>x.com/you/following</code>), then
+                    Open your Twitter&nbsp;/ X
+                    <strong>Following</strong> or
+                    <strong>Followers</strong> page (<code
+                        >x.com/you/following</code
+                    >
+                    or <code>x.com/you/followers</code>), then
                     click&nbsp;<strong>Scan</strong>.
                 </p>
             </div>

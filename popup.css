@@ -419,6 +419,70 @@ code {
     font-weight: 500;
 }
 
+/* ─── Relationship Filter ────────────────────────────────────── */
+.rel-filter-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.rel-filter-wrap::-webkit-scrollbar {
+    display: none;
+}
+
+.rel-filter-btn {
+    flex-shrink: 0;
+    padding: 5px 13px;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--surface-2);
+    border: 1.5px solid var(--border);
+    transition:
+        background var(--t-fast),
+        color var(--t-fast),
+        border-color var(--t-fast);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.rel-filter-btn:hover:not(.rel-filter-btn--active) {
+    background: var(--surface-3);
+    color: var(--text-primary);
+}
+
+/* Active state — colour varies by which tab is selected */
+.rel-filter-btn--active[data-rel="all"] {
+    background: var(--surface-3);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.rel-filter-btn--active[data-rel="following"] {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border-color: rgba(29, 155, 240, 0.35);
+}
+
+.rel-filter-btn--active[data-rel="followers"] {
+    background: var(--success-dim);
+    color: var(--success);
+    border-color: rgba(0, 186, 124, 0.35);
+}
+
+.rel-filter-btn--active[data-rel="both"] {
+    background: rgba(160, 100, 255, 0.14);
+    color: #a064ff;
+    border-color: rgba(160, 100, 255, 0.35);
+}
+
 /* ─── Search Bar ─────────────────────────────────────────────── */
 .debug-panel {
     padding: 12px 16px;
@@ -775,6 +839,39 @@ code {
     -webkit-box-orient: vertical;
     overflow: hidden;
     margin-top: 3px;
+}
+
+/* Relationship badge */
+.rel-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+.rel-badge--following {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border: 1px solid rgba(29, 155, 240, 0.28);
+}
+
+.rel-badge--followers {
+    background: var(--success-dim);
+    color: var(--success);
+    border: 1px solid rgba(0, 186, 124, 0.28);
+}
+
+.rel-badge--both {
+    background: rgba(160, 100, 255, 0.13);
+    color: #a064ff;
+    border: 1px solid rgba(160, 100, 255, 0.28);
 }
 
 /* External link button */

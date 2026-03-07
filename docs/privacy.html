@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Tweetel</title>
+    <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+    <header class="site-header">
+        <a href="index.html">
+            <img src="logo.png" alt="Tweetel logo" class="logo" />
+            <span class="brand-name">Tweetel</span>
+            <span class="brand-tagline">Search your X/Twitter network — locally &amp; privately</span>
+        </a>
+    </header>
+
+    <div class="page-wrapper">
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> March 2026</p>
+
+        <div class="content-block">
+            <p>Welcome to <strong>Tweetel</strong>. We respect your privacy and are committed to protecting it. This Privacy Policy explains how our Chrome Extension handles your data. The short version is simple: <strong>Your data never leaves your browser.</strong></p>
+        </div>
+
+        <h2>1. Data Collection and Storage</h2>
+        <div class="content-block">
+            <p>Tweetel is designed to operate entirely locally on your device. The extension extracts publicly visible profile information (handles, display names, bios, avatars, and verification status) only from the specific X/Twitter pages you explicitly authorize it to scan.</p>
+            <p>All extracted data is stored securely within your browser using Chrome's native <code>chrome.storage.local</code> API. We do not maintain any databases or servers to store, process, or view your information.</p>
+        </div>
+
+        <h2>2. Data Sharing and Transmission</h2>
+        <div class="content-block">
+            <p>Tweetel <strong>does not</strong> transmit, share, sell, or upload any user data, network connections, or personal information to any external servers, APIs, or third parties.</p>
+            <p>We do not use analytics, crash tracking, or telemetry software that sends data over the internet. Your data remains strictly on your local machine.</p>
+        </div>
+
+        <h2>3. Required Permissions and Why We Need Them</h2>
+        <div class="content-block">
+            <p>The extension requires the following permissions to function, all of which are restricted to local operation:</p>
+            <ul>
+                <li><strong>Host Permissions (<code>*://twitter.com/*</code>, <code>*://x.com/*</code>):</strong> Required strictly to read the DOM of your Followers and Following lists during a user-initiated scan.</li>
+                <li><strong>Storage:</strong> Required to save the scanned list of user profiles locally on your device so you can search and filter your network without needing to rescan the page every time.</li>
+                <li><strong>ActiveTab &amp; Scripting:</strong> Required to detect when you are on a valid X/Twitter page and to temporarily inject the DOM-scanning script to read profile cards and simulate scrolling.</li>
+                <li><strong>SidePanel:</strong> Required to provide a persistent, non-intrusive user interface where you can view, filter, and search your scanned network while navigating other pages.</li>
+            </ul>
+        </div>
+
+        <h2>4. User Control &amp; Data Deletion</h2>
+        <div class="content-block">
+            <p>You maintain full control over your data at all times. You can delete all scanned data instantly by:</p>
+            <ul>
+                <li>Clicking the "Clear" button (trash can icon) within the extension's side panel header.</li>
+                <li>Uninstalling the extension from your browser, which automatically wipes its associated local storage.</li>
+            </ul>
+        </div>
+
+        <h2>5. Changes to this Policy</h2>
+        <div class="content-block">
+            <p>If we update this policy, we will post the changes on this page. Because the extension operates entirely locally, future updates will not retroactively affect the privacy of data you have already stored on your device.</p>
+        </div>
+
+        <h2>6. Contact</h2>
+        <div class="content-block">
+            <p>If you have any questions or concerns about this privacy policy or the extension's data practices, please reach out via the Chrome Web Store support tab.</p>
+        </div>
+
+        <footer>
+            <div class="footer-cta">
+                <span class="btn-chrome" title="Coming soon to the Chrome Web Store">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="4" fill="#003d82"/>
+                        <path d="M12 8h8.66a10 10 0 1 0-1.34 9.93L12 8z" fill="none" stroke="#003d82" stroke-width="2"/>
+                        <path d="M12 8l-4.33 7.5" stroke="#003d82" stroke-width="2"/>
+                    </svg>
+                    Add to Chrome
+                </span>
+                <span class="btn-chrome-note">Chrome Web Store listing coming soon</span>
+            </div>
+            <div class="footer-links">
+                <a href="index.html">Home</a> &nbsp;&middot;&nbsp;
+                <a href="privacy.html">Privacy Policy</a> &nbsp;&middot;&nbsp;
+                <a href="terms.html">Terms of Service</a>
+            </div>
+            <div class="footer-brand">&copy; 2026 Tweetel</div>
+        </footer>
+    </div>
+</body>
+</html>
