@@ -8,11 +8,25 @@
 </head>
 <body>
     <header class="site-header">
-        <a href="index.html">
-            <img src="logo.png" alt="Tweetel logo" class="logo" />
-            <span class="brand-name">Tweetel</span>
-            <span class="brand-tagline">Search your X/Twitter network — locally &amp; privately</span>
-        </a>
+        <div class="site-header-inner">
+            <a href="index.html" class="header-brand">
+                <img src="logo.png" alt="Tweetel logo" class="logo" />
+                <div class="brand-text">
+                    <span class="brand-name">Tweetel</span>
+                    <span class="brand-tagline">Search your X/Twitter network — locally &amp; privately</span>
+                </div>
+            </a>
+            <div class="header-cta">
+                <a class="btn-chrome" href="https://chromewebstore.google.com/detail/ngpiafpkocjniaplkankoepaknkbeeci" target="_blank" rel="noopener">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="4" fill="#003d82"/>
+                        <path d="M12 8h8.66a10 10 0 1 0-1.34 9.93L12 8z" fill="none" stroke="#003d82" stroke-width="2"/>
+                        <path d="M12 8l-4.33 7.5" stroke="#003d82" stroke-width="2"/>
+                    </svg>
+                    Add to Chrome
+                </a>
+            </div>
+        </div>
     </header>
 
     <div class="page-wrapper">
@@ -62,15 +76,14 @@
 
         <footer>
             <div class="footer-cta">
-                <span class="btn-chrome" title="Coming soon to the Chrome Web Store">
+                <a class="btn-chrome" href="https://chromewebstore.google.com/detail/ngpiafpkocjniaplkankoepaknkbeeci" target="_blank" rel="noopener">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <circle cx="12" cy="12" r="4" fill="#003d82"/>
                         <path d="M12 8h8.66a10 10 0 1 0-1.34 9.93L12 8z" fill="none" stroke="#003d82" stroke-width="2"/>
                         <path d="M12 8l-4.33 7.5" stroke="#003d82" stroke-width="2"/>
                     </svg>
                     Add to Chrome
-                </span>
-                <span class="btn-chrome-note">Chrome Web Store listing coming soon</span>
+                </a>
             </div>
             <div class="footer-links">
                 <a href="index.html">Home</a> &nbsp;&middot;&nbsp;
