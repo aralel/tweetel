@@ -118,11 +118,14 @@
        DEBUG TELEMETRY
   ═══════════════════════════════════════════════ -->
         <section class="debug-panel" id="debug-panel" hidden>
-            <div class="debug-header">
+            <div class="debug-header" id="debug-toggle" style="cursor:pointer;" title="Toggle debug panel">
                 <span class="debug-title">Debug telemetry</span>
-                <span class="debug-pill" id="debug-live-pill">Idle</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span class="debug-pill" id="debug-live-pill">Idle</span>
+                    <span class="debug-chevron" id="debug-chevron">▾</span>
+                </div>
             </div>
-            <div class="debug-grid">
+            <div class="debug-grid" id="debug-grid">
                 <div class="debug-item">
                     <span class="debug-key">Idle</span>
                     <span class="debug-value" id="debug-idle-count">0</span>

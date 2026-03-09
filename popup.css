@@ -501,6 +501,24 @@ code {
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 10px;
+    user-select: none;
+}
+.debug-header:hover {
+    opacity: 0.8;
+}
+.debug-chevron {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+.debug-panel.debug-panel--collapsed .debug-chevron {
+    transform: rotate(-90deg);
+}
+.debug-panel.debug-panel--collapsed .debug-header {
+    margin-bottom: 0;
+}
+.debug-panel.debug-panel--collapsed .debug-grid {
+    display: none;
 }
 
 .debug-title {

@@ -47,6 +47,7 @@ const elFilterBtns = () => document.querySelectorAll(".rel-filter-btn");
 
 // ─── Debug panel DOM refs ─────────────────────────────────────────────────────
 const elDebugPanel = $("debug-panel");
+const elDebugToggle = $("debug-toggle");
 const elDebugLivePill = $("debug-live-pill");
 const elDebugIdleCount = $("debug-idle-count");
 const elDebugResumeAttempts = $("debug-resume-attempts");
@@ -130,7 +131,7 @@ async function refreshStatus() {
 
       chrome.tabs.sendMessage(tab.id, { type: "GET_STATUS" }, (response) => {
         const followPattern =
-          /\/[A-Za-z0-9_]{1,50}\/(following|followers)(\?.*)?$/;
+          /\/[A-Za-z0-9_]{1,50}\/(following|followers|verified_followers)(\?.*)?$/;
         if (chrome.runtime.lastError) {
           onFollowPage = followPattern.test(url);
           isScanning = false;
@@ -528,6 +529,11 @@ function bindEvents() {
     });
   });
 
+  // ── Debug panel toggle ────────────────────────────────────────
+  elDebugToggle.addEventListener("click", () => {
+    elDebugPanel.classList.toggle("debug-panel--collapsed");
+  });
+
   // ── Pagination ────────────────────────────────────────────────
   elBtnFirst.addEventListener("click", () => goToPage(1));
   elBtnLast.addEventListener("click", () => goToPage(totalPages));
@@ -563,7 +569,8 @@ function bindTabListeners() {
   });
 
   chrome.tabs.onUpdated.addListener(async (_tabId, changeInfo) => {
-    if (changeInfo.status !== "complete" && !changeInfo.url) return;
+    // React to both URL changes (SPA navigation) and full page loads
+    if (!changeInfo.url && changeInfo.status !== "complete") return;
     await refreshStatus();
     renderStatusBar();
   });
@@ -723,7 +730,7 @@ function derivePanelState(action) {
 
 function renderDebugPanel() {
   syncFilterButtons();
-  const show = isScanning || lastTelemetry !== null;
+  const show = isScanning;
   elDebugPanel.hidden = !show;
   if (!show) return;
 

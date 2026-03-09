@@ -31,6 +31,34 @@ function sendToContent(tabId, message) {
   });
 }
 
+// ─── Helper: inject content.js if not already running, then send message ──────
+// This silently injects the script when the side panel is opened on a tab that
+// already has X/Twitter loaded (no page refresh needed).
+async function ensureContentScriptAndSend(tabId, message) {
+  // First, try a cheap ping to see if the content script is alive.
+  const alive = await new Promise((resolve) => {
+    chrome.tabs.sendMessage(tabId, { type: "GET_STATUS" }, () => {
+      resolve(!chrome.runtime.lastError);
+    });
+  });
+
+  if (!alive) {
+    // Inject the content script programmatically.
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content.js"],
+      });
+      // Give it a moment to initialize before sending the real message.
+      await new Promise((r) => setTimeout(r, 150));
+    } catch (injectionError) {
+      throw new Error("Could not inject content script: " + injectionError.message);
+    }
+  }
+
+  return sendToContent(tabId, message);
+}
+
 // ─── Helper: get the currently active Twitter/X tab ──────────────────────────
 function getActiveTwitterTab() {
   return new Promise((resolve) => {
@@ -67,7 +95,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           case "START_SCAN":
             activeScanTabId = tab.id;
             try {
-              const res = await sendToContent(tab.id, { type: "START_SCAN" });
+              const res = await ensureContentScriptAndSend(tab.id, { type: "START_SCAN" });
               sendResponse(res);
             } catch (err) {
               sendResponse({ ok: false, error: err.message });
@@ -85,10 +113,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           case "GET_STATUS":
             try {
-              const res = await sendToContent(tab.id, { type: "GET_STATUS" });
+              const res = await ensureContentScriptAndSend(tab.id, { type: "GET_STATUS" });
               sendResponse(res);
             } catch (err) {
-              // Content script not yet ready in this tab
               sendResponse({
                 ok: false,
                 scanning: false,

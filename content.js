@@ -67,14 +67,16 @@
   };
 
   // ─── URL helpers ──────────────────────────────────────────────────────────
-  const isSupportedPage = () =>
-    /^https:\/\/(twitter|x)\.com\/[A-Za-z0-9_]{1,50}\/(following|followers)(\?.*)?$/.test(
-      location.href,
-    );
+  const SUPPORTED_PAGE_RE =
+    /^https:\/\/(twitter|x)\.com\/[A-Za-z0-9_]{1,50}\/(following|followers|verified_followers)(\?.*)?$/;
+
+  const isSupportedPage = () => SUPPORTED_PAGE_RE.test(location.href);
 
   function getPageType() {
-    const m = location.href.match(/\/(following|followers)(\?.*)?$/);
-    return m ? m[1] : "following"; // 'following' | 'followers'
+    const m = location.href.match(/\/(following|followers|verified_followers)(\?.*)?$/);
+    if (!m) return "following";
+    // verified_followers is a subset of followers — treat as 'followers'
+    return m[1] === "verified_followers" ? "followers" : m[1];
   }
 
   // ─── Data-extraction helpers ───────────────────────────────────────────────
@@ -201,6 +203,7 @@
 
   function loadExisting() {
     return new Promise((resolve) => {
+      if (!isContextValid()) { resolve(); return; }
       chrome.storage.local.get([STORAGE_KEY], (res) => {
         const raw = res[STORAGE_KEY] || {};
         // Rebuild with normalized lowercase keys so that any legacy data
@@ -221,6 +224,7 @@
   }
 
   function persist() {
+    if (!isContextValid()) return Promise.resolve();
     const meta = {
       count: Object.keys(collectedMap).length,
       lastScanAt: Date.now(),
@@ -234,13 +238,43 @@
     });
   }
 
+  // ─── Extension context guard ──────────────────────────────────────────────
+  // When the extension is reloaded/updated the content script's context becomes
+  // invalid. All chrome.* calls will then throw "Extension context invalidated".
+  // We detect this once and tear down gracefully so no further errors are thrown.
+
+  let _contextInvalidated = false;
+
+  function isContextValid() {
+    if (_contextInvalidated) return false;
+    try {
+      // Cheapest possible check — accessing chrome.runtime.id throws when invalid
+      return !!chrome.runtime?.id;
+    } catch (_) {
+      _contextInvalidated = true;
+      teardownOnInvalidation();
+      return false;
+    }
+  }
+
+  function teardownOnInvalidation() {
+    scanning = false;
+    if (scrollTimer) { clearTimeout(scrollTimer); scrollTimer = null; }
+    stopObserver();
+  }
+
   // ─── Messaging ────────────────────────────────────────────────────────────
 
   function broadcast(type, payload = {}) {
+    if (!isContextValid()) return;
     try {
       chrome.runtime.sendMessage({ type, ...payload });
-    } catch (_) {
-      /* popup may be closed – that's fine */
+    } catch (err) {
+      if (err?.message?.includes("Extension context invalidated")) {
+        _contextInvalidated = true;
+        teardownOnInvalidation();
+      }
+      /* popup may be closed — that's fine otherwise */
     }
   }
 
@@ -986,9 +1020,11 @@
 
       case "CLEAR_DATA":
         collectedMap = {};
-        chrome.storage.local.remove([STORAGE_KEY, META_KEY], () => {
-          broadcast("DATA_CLEARED");
-        });
+        if (isContextValid()) {
+          chrome.storage.local.remove([STORAGE_KEY, META_KEY], () => {
+            broadcast("DATA_CLEARED");
+          });
+        }
         sendResponse({ ok: true });
         break;
 
@@ -1003,21 +1039,39 @@
   // Poll href to catch navigation away from the following page.
 
   let _lastHref = location.href;
+  let _lastSupportedState = isSupportedPage();
+
+  // Broadcast current page state immediately so the popup gets it on first load
+  // without requiring a navigation event.
+  broadcast("PAGE_CHANGED", {
+    url: location.href,
+    onSupportedPage: isSupportedPage(),
+    pageType: getPageType(),
+  });
 
   setInterval(() => {
-    if (location.href === _lastHref) return;
-    _lastHref = location.href;
+    if (!isContextValid()) return;
+    const currentHref = location.href;
+    const currentlySupported = isSupportedPage();
 
-    if (scanning && !isSupportedPage()) {
+    const hrefChanged = currentHref !== _lastHref;
+    const supportedChanged = currentlySupported !== _lastSupportedState;
+
+    if (!hrefChanged && !supportedChanged) return;
+
+    _lastHref = currentHref;
+    _lastSupportedState = currentlySupported;
+
+    if (scanning && !currentlySupported) {
       stopScan("navigated_away");
     }
 
     broadcast("PAGE_CHANGED", {
-      url: location.href,
-      onSupportedPage: isSupportedPage(),
+      url: currentHref,
+      onSupportedPage: currentlySupported,
       pageType: getPageType(),
     });
-  }, 800);
+  }, 600);
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   // Pre-load existing data so the count is immediately available on GET_STATUS
